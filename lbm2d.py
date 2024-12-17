@@ -1,10 +1,11 @@
 import numpy as np  
 from matplotlib import pyplot
+import pickle
 
 class LBM2D:
 	cx = np.array([0, 0, 1, 1, 1, 0, -1, -1, -1])
-	cy = np.array([0, 1, 1, 0, -1, -1, -1, -1, 0])
-	w = np.array([4. / 9, 1. / 9, 1. / 36, 1. / 9, 1. / 36, 1. / 9, 1. / 36, 1. / 9, 1. / 36], dtype=np.float64)
+	cy = np.array([0, 1, 1, 0, -1, -1, -1, 0, 1])
+	w = np.array([4/9, 1/9, 1/36, 1/9, 1/36, 1/9, 1/36, 1/9, 1/36])
 	Nl = 9
 
 
@@ -13,7 +14,7 @@ class LBM2D:
 		self.Ny = Ny
 		self.tau = tau
 		self.Nt = Nt
-		self.f = np.ones((Ny, Nx, self.Nl)) + 0.01 * np.random.randn(Ny, Nx, self.Nl)
+		self.f = np.ones((Ny, Nx, LBM2D.Nl)) + 0.01 * np.random.randn(Ny, Nx, LBM2D.Nl)
 
 		# hocu da tecem desno
 		self.f[:, :, 3] = 2.3 # sta god
@@ -24,6 +25,7 @@ class LBM2D:
 		# self.ux = np.sum(self.f * self.cx, 2) / self.rho
 		# self.uy = np.sum(self.f * self.cy, 2) / self.rho
 
+		self.simres = []
 		self.rho = np.ones((Ny, Nx))
 		self.ux = np.zeros((Ny, Nx))  # Set initial velocity to 0
 		self.uy = np.zeros((Ny, Nx))
@@ -38,25 +40,21 @@ class LBM2D:
 		for y in range(self.Ny):
 			for x in range(self.Nx):
 				if shape.containsPoint(x, y):
-					self.geometry[y][x] = True
+					self.geometry[y, x] = True
 
 
 	def stream(self):
-		for i, x, y in zip(range(self.Nl), self.cx, self.cy):
+		for i, x, y in zip(range(LBM2D.Nl), LBM2D.cx, LBM2D.cy):
 			self.f[:, :, i] = np.roll(self.f[:, :, i], x, axis=1)
 			self.f[:, :, i] = np.roll(self.f[:, :, i], y, axis=0)
 
 	def equilibrium(self):
-		for i, x, y, v in zip(range(self.Nl), self.cx, self.cy, self.w):
-			self.feq[:, :, i] = self.rho * v * (
-					1 + 3 * (x * self.ux + y * self.uy) 
-					+ 9 * (x * self.ux + y * self.uy)**2 / 2
-					- 3 * (self.ux**2 + self.uy**2) / 2
-				)
+		self.feq = np.zeros(self.f.shape)
+		for i, x, y, v in zip(range(LBM2D.Nl), LBM2D.cx, LBM2D.cy, LBM2D.w):
+			self.feq[:, :, i] = self.rho * v * (1 + 3 * (x*self.ux + y*self.uy) + 9 * (x*self.ux + y*self.uy)**2 / 2 - 3 * (self.ux**2 + self.uy**2) / 2)
 
 	def collision(self):
-		self.equilibrium()
-		self.f = self.f - (self.f - self.feq) / self.tau
+		self.f = self.f + -(1 / self.tau) * (self.f - self.feq) 
 
 	def boundary_collide(self):
 		bound = self.f[self.geometry, :]
@@ -74,11 +72,12 @@ class LBM2D:
 		self.stream()
 
 		self.rho = np.sum(self.f, 2)
-		self.ux = np.sum(self.f * self.cx, 2) / self.rho
-		self.uy = np.sum(self.f * self.cy, 2) / self.rho
+		self.ux = np.sum(self.f * LBM2D.cx, 2) / self.rho
+		self.uy = np.sum(self.f * LBM2D.cy, 2) / self.rho
 
 		self.boundary_collide()	
-
+		self.simres.append(np.sqrt(self.ux**2 + self.uy**2))
+		self.equilibrium()
 		self.collision()
 
 	def simulate(self, Nsteps, plot_every):
@@ -88,10 +87,9 @@ class LBM2D:
 				pyplot.imshow(np.sqrt(self.ux**2 + self.uy**2))
 				pyplot.pause(.01)
 				pyplot.cla()
-			#print(i)
-		pyplot.imshow(np.sqrt(self.ux**2 + self.uy**2))
-		pyplot.pause(.01)
-		pyplot.cla()
+			print(i)
+		with open('my.pkl', 'wb') as outfile:
+			pickle.dump(self.simres, outfile, pickle.HIGHEST_PROTOCOL)
 
 class Circle:
 	def __init__(self, x, y, r):
@@ -104,5 +102,5 @@ class Circle:
 
 if __name__=='__main__':
 	lbm = LBM2D(400, 100, 0.53, 3000)
-	#lbm.add_shape(Circle(100, 50, 13))
-	lbm.simulate(3000, 1)
+	lbm.add_shape(Circle(100, 50, 13))
+	lbm.simulate(3000, 3000)
