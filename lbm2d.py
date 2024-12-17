@@ -1,8 +1,6 @@
 import numpy as np  
 from matplotlib import pyplot
 
-
-
 class LBM2D:
 	cx = np.array([0, 0, 1, 1, 1, 0, -1, -1, -1])
 	cy = np.array([0, 1, 1, 0, -1, -1, -1, -1, 0])
@@ -25,6 +23,10 @@ class LBM2D:
 		# self.rho = np.sum(self.f, 2)
 		# self.ux = np.sum(self.f * self.cx, 2) / self.rho
 		# self.uy = np.sum(self.f * self.cy, 2) / self.rho
+
+		self.rho = np.ones((Ny, Nx))
+		self.ux = np.zeros((Ny, Nx))  # Set initial velocity to 0
+		self.uy = np.zeros((Ny, Nx))
 
 		self.feq = np.zeros(self.f.shape)
 
