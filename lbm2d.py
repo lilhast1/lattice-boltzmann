@@ -14,10 +14,10 @@ class LBM2D:
 		self.Ny = Ny
 		self.tau = tau
 		self.Nt = Nt
-		self.f = np.ones((Ny, Nx, LBM2D.Nl)) + 0.01 * np.random.randn(Ny, Nx, LBM2D.Nl)
+		self.f = np.load('taylorgreen.np.npy') #+ 0.01 * np.random.randn(Ny, Nx, LBM2D.Nl)
 
 		# hocu da tecem desno
-		self.f[:, :, 3] = 2.3 # sta god
+		#self.f[:, :, 3] = 2.3 # sta god
 
 		self.geometry = np.full((Ny, Nx), False)
 		
@@ -66,8 +66,9 @@ class LBM2D:
 		self.uy[self.geometry] = 0 
 
 	def simulate_step(self):
-		self.f[:, -1, [6, 7, 8]] = self.f[:, -2, [6, 7, 8]]
-		self.f[:, 0, [2, 3, 4]] = self.f[:, 1, [2, 3, 4]]
+		#Zhou-Hei boundary
+		# self.f[:, -1, [6, 7, 8]] = self.f[:, -2, [6, 7, 8]]
+		# self.f[:, 0, [2, 3, 4]] = self.f[:, 1, [2, 3, 4]]
 
 		self.stream()
 
@@ -88,8 +89,8 @@ class LBM2D:
 				pyplot.pause(.01)
 				pyplot.cla()
 			print(i)
-		with open('my.pkl', 'wb') as outfile:
-			pickle.dump(self.simres, outfile, pickle.HIGHEST_PROTOCOL)
+		# with open('my.pkl', 'wb') as outfile:
+		# 	pickle.dump(self.simres, outfile, pickle.HIGHEST_PROTOCOL)
 
 class Circle:
 	def __init__(self, x, y, r):
@@ -101,6 +102,5 @@ class Circle:
 		return np.sqrt((self.x - x)**2 + (self.y - y)**2) < self.r
 
 if __name__=='__main__':
-	lbm = LBM2D(400, 100, 0.53, 3000)
-	lbm.add_shape(Circle(100, 50, 13))
-	lbm.simulate(3000, 3000)
+	lbm = LBM2D(64, 64, 1, 3000)
+	lbm.simulate(4000, 10)
