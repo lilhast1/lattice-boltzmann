@@ -8,6 +8,10 @@ class LBM2D:
 	w = np.array([4/9, 1/9, 1/36, 1/9, 1/36, 1/9, 1/36, 1/9, 1/36])
 	Nl = 9
 
+	u_max  = 0.04/2      # maximum velocity
+	nu     = (2-1)/6     # kinematic shear viscosity
+	rho0   = 1               # rest density
+
 
 	def __init__(self, Nx, Ny, tau, Nt):
 		self.Nx = Nx
@@ -31,6 +35,8 @@ class LBM2D:
 		self.uy = np.zeros((Ny, Nx))
 
 		self.feq = np.zeros(self.f.shape)
+
+		[self.tg_rho, self.tg_u, self.tg_P] = self.taylorgreen(0, self.nu, self.rho0, self.u_max)
 
 
 	def add_geometry(self, shape_map):
@@ -77,9 +83,13 @@ class LBM2D:
 		self.uy = np.sum(self.f * LBM2D.cy, 2) / self.rho
 
 		self.boundary_collide()	
-		self.simres.append(np.sqrt(self.ux**2 + self.uy**2))
+
+		#self.simres.append(np.sqrt(self.ux**2 + self.uy**2))
 		self.equilibrium()
 		self.collision()
+
+		# compare with analytical solution
+		
 
 	def simulate(self, Nsteps, plot_every):
 		for i in range(Nsteps):
@@ -91,6 +101,17 @@ class LBM2D:
 			print(i)
 		# with open('my.pkl', 'wb') as outfile:
 		# 	pickle.dump(self.simres, outfile, pickle.HIGHEST_PROTOCOL)
+	def taylorgreen(self, t, nu, rho0, u_max):
+		kx = 2*np.pi/self.Nx
+		ky = 2*np.pi/self.Ny
+		td = 1/(nu*(kx*kx+ky*ky))
+		
+		u = np.array([-u_max*np.sqrt(ky/kx)*np.cos(kx*X)*np.sin(ky*Y)*np.exp(-t/td),
+					u_max*np.sqrt(kx/ky)*np.sin(kx*X)*np.cos(ky*Y)*np.exp(-t/td)])
+		P = -0.25*rho0*u_max*u_max*((ky/kx)*np.cos(2*kx*X)+(kx/ky)*np.cos(2*ky*Y))*np.exp(-2*t/td)
+		rho = rho0+3*P
+		return [rho, u, P]
+
 
 class Circle:
 	def __init__(self, x, y, r):
