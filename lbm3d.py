@@ -1,7 +1,7 @@
 import numpy as np  
 from matplotlib import pyplot as plt
 import pickle
-
+from jax import jit
 
 class LBM:
 	cx = np.array([0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1], dtype=np.float32)
