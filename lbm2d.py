@@ -179,11 +179,19 @@ class Rectangle:
 
 if __name__=='__main__':
 	lbm = LBM2D(400, 100, 0.53)
-	lbm.add_shape(Circle(100, 50, 10))
-	lbm.add_shape(Circle(120, 50, 10))
-	lbm.add_shape(Circle(140, 50, 10))
-	lbm.add_shape(Circle(110, 70, 10))
-	lbm.add_shape(Circle(130, 70, 10))
-	lbm.add_shape(Square(200, 40, 20))
-	lbm.add_shape(Rectangle(300, 40, 20, 10))
-	lbm.simulate(4000, 10)
+	# lbm.add_shape(Circle(100, 50, 10))
+	# lbm.add_shape(Circle(120, 50, 10))
+	# lbm.add_shape(Circle(140, 50, 10))
+	# lbm.add_shape(Circle(110, 70, 10))
+	# lbm.add_shape(Circle(130, 70, 10))
+	# lbm.add_shape(Square(200, 40, 20))
+	# lbm.add_shape(Rectangle(300, 40, 20, 10))
+	lbm.add_shape(Rectangle(100, 60, 10, 40))
+	lbm.add_shape(Rectangle(100, 0, 10, 30))
+	lbm.simulate(1200, 10)
+
+
+	# dodati 1. analiticka provjera TGreen
+	# dodati 2. graf energije
+	# dodati 3. graf pritiska
+	# dodati rotor u
