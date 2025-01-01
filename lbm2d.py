@@ -1,5 +1,5 @@
 import numpy as np  
-from matplotlib import pyplot
+import matplotlib.pyplot as plt
 import pickle
 
 class LBM2D:
@@ -15,7 +15,7 @@ class LBM2D:
 	rho0   = 1               # rest density
 
 
-	def __init__(self, Nx, Ny, tau):
+	def __init__(self, Nx, Ny, tau, zhouhei = True):
 		self.Nx = Nx
 		self.Ny = Ny
 		self.tau = tau
@@ -38,8 +38,9 @@ class LBM2D:
 		self.u = np.array([self.ux, self.uy])
 
 		self.feq = np.zeros(self.f.shape)
-
-		[self.tg_rho, self.tg_u, self.tg_P] = self.taylorgreen(0, self.nu, self.rho0, self.u_max)
+		self.zhouhei = zhouhei
+		self.analytic = None
+		#[self.tg_rho, self.tg_u, self.tg_P] = self.taylorgreen(0, self.nu, self.rho0, self.u_max)
 		#self.f = LBM2D.equilibrium(self.f.shape, self.tg_rho, self.tg_u[0, :], self.tg_u[1, :]) 
 		#self.feq = self.f
 
@@ -60,10 +61,7 @@ class LBM2D:
 			self.f[:, :, i] = np.roll(self.f[:, :, i], y, axis=0)
 
 	@staticmethod
-	def equilibrium(shape, rho, ux, uy, u):
-		feq = np.zeros(shape)
-		for i, x, y, v in zip(range(LBM2D.Nl), LBM2D.cx, LBM2D.cy, LBM2D.w):
-			feq[:, :, i] = rho * v * (1 + 3 * (x*ux + y*uy) + 9 * (x*ux + y*uy)**2 / 2 - 3 * (ux**2 + uy**2) / 2)
+	def equilibrium(rho, u):
 		# c . u 
 		# feq(r) = rho(r) * w * [1 + 3 u(r) . c + 9/2 (c . u(r))^2 - 3/2 u(r) . u(r)]
 		
@@ -94,12 +92,13 @@ class LBM2D:
 		self.uy[self.geometry] = 0 
 
 		for i in range(LBM2D.dims):
-			self.u[i][self.geometry] = 0
+			self.u[i, self.geometry] = 0
 
 	def simulate_step(self):
 		#Zhou-Hei boundary
-		self.f[:, -1, [6, 7, 8]] = self.f[:, -2, [6, 7, 8]]
-		self.f[:, 0, [2, 3, 4]] = self.f[:, 1, [2, 3, 4]]
+		if self.zhouhei:
+			self.f[:, -1, [6, 7, 8]] = self.f[:, -2, [6, 7, 8]]
+			self.f[:, 0, [2, 3, 4]] = self.f[:, 1, [2, 3, 4]]
 
 		# right stream
 		#self.f[:, 0, 3] = 2.3
@@ -116,20 +115,44 @@ class LBM2D:
 		self.boundary_collide()	
 
 		#self.simres.append(np.sqrt(self.ux**2 + self.uy**2))
-		self.feq = self.equilibrium(self.f.shape, self.rho, self.ux, self.uy, self.u)
-		self.collision()
+		self.feq = self.equilibrium(self.rho, self.u)
+		self.collision()		
 
-		# compare with analytical solution
-		
-
-	def simulate(self, Nsteps, plot_every):
-		for i in range(Nsteps):
+	def simulate(self, Nsteps, plot_every, save_path = None, message_every = None, data_every = None, data_path = None):
+		Es = []
+		errrhos = []
+		errus = []
+		for i in range(1, Nsteps + 1):
 			self.simulate_step()
+			E = np.sum(self.rho * self.u**2 / 2)
+			# compare with analytical solution
+			if self.analytic is not None:
+				[rhoa, ua, Pa] = self.analytic(i)
+				#ua[[0, 1]] = ua[[1,0]]
+				errrho2 = (self.rho - rhoa)**2
+				erru2 = (self.u - ua)**2
+				errrhos.append(errrho2.sum() / rhoa.sum())
+				errus.append(erru2.max() / ua.max())
 			if i % plot_every == 0:
-				pyplot.imshow(np.sqrt(self.ux**2 + self.uy**2))
-				pyplot.pause(.01)
-				pyplot.cla()
-			print(i)
+				fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+				axes[0].imshow(np.sqrt(self.u[0]**2 + self.u[1]**2))
+				axes[0].set_title('|u|')
+				axes[1].imshow(self.rho)
+				axes[1].set_title('Rho')
+				axes[2].imshow(LBM2D.curl(self.u[0], self.u[1]))
+				axes[2].set_title('Rotor u')
+				if save_path is not None:
+					plt.savefig(save_path + f'lbm2d_{i}.png')
+				plt.show()
+				
+				plt.pause(.01)
+				plt.close()
+			if message_every is not None and i % message_every == 0:
+				print(f't = {i} E = {E}')
+				if self.analytic is not None:
+					print(f'drho = {errrhos[-1]} du = {errus[-1]}')
+			Es.append(E)
+		return Es, errrhos, errus
 		# with open('my.pkl', 'wb') as outfile:
 		# 	pickle.dump(self.simres, outfile, pickle.HIGHEST_PROTOCOL)
 	def taylorgreen(self, t, nu, rho0, u_max):
@@ -146,7 +169,10 @@ class LBM2D:
 		P = -0.25*rho0*u_max*u_max*((ky/kx)*np.cos(2*kx*X)+(kx/ky)*np.cos(2*ky*Y))*np.exp(-2*t/td)
 		rho = rho0+3*P
 		return [rho, u, P]
-
+	
+	@staticmethod
+	def curl(ux, uy):
+		return np.roll(uy,-1,axis=1) - np.roll(uy,1,axis=1) - np.roll(ux,-1,axis=0) + np.roll(ux,1,axis=0)
 
 class Circle:
 	def __init__(self, x, y, r):
