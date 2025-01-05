@@ -97,8 +97,8 @@ class LBM2D:
 	def simulate_step(self):
 		#Zhou-Hei boundary
 		if self.zhouhei:
-			self.f[:, -1, [6, 7, 8]] = self.f[:, -2, [6, 7, 8]]
-			self.f[:, 0, [2, 3, 4]] = self.f[:, 1, [2, 3, 4]]
+			self.f[0, :, [5, 6, 4]] = self.f[1, :,  [1, 2, 8]]
+			self.f[-1, :, [1, 2, 8]] = self.f[-2, :, [5, 6, 4]]
 
 		# right stream
 		#self.f[:, 0, 3] = 2.3
