@@ -15,7 +15,7 @@ class LBM2D:
 	rho0   = 1               # rest density
 
 
-	def __init__(self, Nx, Ny, tau, zhouhei = True):
+	def __init__(self, Nx, Ny, tau, zhouhei = True, openboundary = False):
 		self.Nx = Nx
 		self.Ny = Ny
 		self.tau = tau
@@ -39,6 +39,7 @@ class LBM2D:
 
 		self.feq = np.zeros(self.f.shape)
 		self.zhouhei = zhouhei
+		self.openboundary = openboundary
 		self.analytic = None
 		#[self.tg_rho, self.tg_u, self.tg_P] = self.taylorgreen(0, self.nu, self.rho0, self.u_max)
 		#self.f = LBM2D.equilibrium(self.f.shape, self.tg_rho, self.tg_u[0, :], self.tg_u[1, :]) 
@@ -100,6 +101,9 @@ class LBM2D:
 			self.f[0, :, [5, 6, 4]] = self.f[1, :,  [1, 2, 8]]
 			self.f[-1, :, [1, 2, 8]] = self.f[-2, :, [5, 6, 4]]
 
+		if self.openboundary:
+			self.f[:, 0, [2, 3, 4]] = self.f[:, 1, [2, 3, 4]]
+			self.f[:, -1, [2, 3, 4]] = self.f[:, -2, [2, 3, 4]]
 		# right stream
 		#self.f[:, 0, 3] = 2.3
 
