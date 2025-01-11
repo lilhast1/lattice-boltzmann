@@ -36,7 +36,7 @@ class LBM2D:
 		self.ux = np.zeros((Ny, Nx))  # Set initial velocity to 0
 		self.uy = np.zeros((Ny, Nx))
 		self.u = np.array([self.ux, self.uy])
-
+		self.F = np.zeros(self.rho.shape)
 		self.feq = np.zeros(self.f.shape)
 		self.zhouhei = zhouhei
 		self.openboundary = openboundary
@@ -114,7 +114,7 @@ class LBM2D:
 		self.uy = np.sum(self.f * LBM2D.cy, 2) / self.rho
 
 		for i in range(LBM2D.dims):
-			self.u[i] = np.sum(self.f * LBM2D.c[i], 2) / self.rho
+			self.u[i] = np.sum(self.f * LBM2D.c[i], 2) / self.rho + self.F / self.rho
 
 		self.boundary_collide()	
 
@@ -147,15 +147,16 @@ class LBM2D:
 				axes[2].set_title('Rotor u')
 				if save_path is not None:
 					plt.savefig(save_path + f'lbm2d_{i}.png')
-				plt.show()
+				# plt.show()
 				
-				plt.pause(.01)
-				plt.close()
+				# plt.pause(.01)
+				# plt.close()
 			if message_every is not None and i % message_every == 0:
 				print(f't = {i} E = {E}')
 				if self.analytic is not None:
 					print(f'drho = {errrhos[-1]} du = {errus[-1]}')
 			Es.append(E)
+
 		return Es, errrhos, errus
 		# with open('my.pkl', 'wb') as outfile:
 		# 	pickle.dump(self.simres, outfile, pickle.HIGHEST_PROTOCOL)
