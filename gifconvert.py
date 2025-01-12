@@ -1,11 +1,11 @@
 from PIL import Image
 import glob
 
-folder_path = "circle"
-output_gif = "circle.gif"
+folder_path = "sphere"
+output_gif = "sphere.gif"
 res = 50
 # Get all files matching the pattern
-all_files = glob.glob(f"{folder_path}/lbm2d_*.png")
+all_files = glob.glob(f"{folder_path}/lbm3d_*.png")
 
 # Filter to include only files with numbers that are multiples of 20
 

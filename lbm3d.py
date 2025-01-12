@@ -96,15 +96,15 @@ class LBM:
 	
 	def simulate_step(self):
 		#Zhou-Hei boundary
-		self.f[:, :, -1, [2, 8, 10, 16, 18]] = self.f[:, :, -2, [2, 8, 10, 16, 18]]
-		self.f[:, :, 0, [1, 7, 9, 15, 17]] = self.f[:, :, 1, [1, 7, 9, 15, 17]]
+		# self.f[-1, :, :, [5, 11, 14, 15, 18]] = self.f[-2, :, :, [6, 12, 13, 16, 17]]
+		# self.f[0, :, :, [6, 12, 13, 16, 17]] = self.f[1, :, :, [5, 11, 14, 15, 18]]
 
 		# right stream
 		#self.f[:, 0, 3] = 2.3
 
 		self.stream()
 
-		self.rho = self.f.sum()
+		self.rho = np.sum(self.f, 3)
 
 		for i in range(LBM.dims):
 			self.u[i] = np.sum(self.f * LBM.c[i], 3) / self.rho
@@ -118,28 +118,23 @@ class LBM:
 		# compare with analytical solution
 		
 
-	def simulate(self, Nsteps, plot_every):
+	def simulate(self, Nsteps, plot_every, path='sphere'):
+		Es = []
 		for i in range(Nsteps):
 			self.simulate_step()
 			if i % plot_every == 0:
-				plt.figure(figsize = (10,5))
 				data1 = self.u[0, :, :, :]**2 + self.u[1, :, :, :]**2 +  self.u[2, :, :, :]**2
 				data2 = data1[50,:,:]
-				plt.imshow(data2.transpose(),cmap="gist_ncar") #"rainbow")
-				plt.grid(True)
-				plt.clim(0.01,0.2) 
-				plt.colorbar(shrink=0.75,format='%.6f')
-				plt.savefig("./pngfiles/3Dimage1_{0:04d}.png".format(i//plot_every))
-				plt.close() 
-				
-                
-                # show plot
-				
-				
-
-			print(i)
+				fig, axes = plt.subplots(1, 1, figsize=(10, 10))
+				axes.imshow(data2.transpose())
+				axes.set_title('|u|')
+				plt.savefig(f'{path}/lbm3d_{i}.png')
+			E = np.sum(self.rho * self.u**2 / 2)
+			print(f'itr={i} E={E}')
+			Es.append(E)
 		# with open('my.pkl', 'wb') as outfile:
 		# 	pickle.dump(self.simres, outfile, pickle.HIGHEST_PROTOCOL)
+		return Es
 
 
 class Sphere:
@@ -174,4 +169,5 @@ class Rectangle:
 if __name__=='__main__':
 	lbm = LBM(400, 100, 100, 0.53)
 	lbm.add_shape(Sphere(100, 50, 50, 10))
-	lbm.simulate(4, 10)
+	
+	lbm.simulate(200, 10)
