@@ -147,10 +147,10 @@ class LBM2D:
 				axes[2].set_title('Rotor u')
 				if save_path is not None:
 					plt.savefig(save_path + f'lbm2d_{i}.png')
-				# plt.show()
+				plt.show()
 				
-				# plt.pause(.01)
-				# plt.close()
+				plt.pause(.01)
+				plt.close()
 			if message_every is not None and i % message_every == 0:
 				print(f't = {i} E = {E}')
 				if self.analytic is not None:
